@@ -9,7 +9,24 @@
 
 #include <exynos9830.h>
 
+#include <memory.h>
+
 #include <pmu.h>
+
+uint8_t usb_receive_hook(uint32_t rx_addr, uint32_t size)
+{
+	if(rx_addr == 0xBFE80000)
+	{
+		writel(0x6368, PTR_USB_RECEIVE);
+		usb_receive(0xE8000000, 2.5 * 1024 * 1024);
+		return usb_receive(rx_addr, size);
+	}
+
+	writel(0x6368, PTR_USB_RECEIVE);
+	uint8_t ret = usb_receive(rx_addr, size);
+	writel((uint32_t)(uintptr_t)usb_receive_hook, PTR_USB_RECEIVE);
+	return ret;
+}
 
 int main(void)
 {
@@ -33,6 +50,9 @@ int main(void)
 	detect_and_patch_decrypted_epbl();
 
 	set_status_bit(0, BL1_END);
+	usb_send("OpenMiniBL1 - Attempting last minute patches...\n");
+	writel((uint32_t)(uintptr_t)usb_receive_hook, PTR_USB_RECEIVE);
+	usb_send("OpenMiniBL1 - Bye!");
 	jump_to_epbl();
 
 	return -1;
