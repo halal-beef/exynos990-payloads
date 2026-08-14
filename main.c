@@ -11,6 +11,8 @@
 
 #include <pmu.h>
 
+#include <memory.h>
+
 int main(void)
 {
 	uint32_t ret = 0;
@@ -18,6 +20,8 @@ int main(void)
 	usb_reinit(USB_STRUCT_ADDR, USB_DELAY, USB_SPEED_FULLSPEED);
 	usb_send("Setting up last bits of BL1...");
 	complete_bl1_rx_exec();
+	usb_send("OpenMiniBL1 - Turning off SecureBoot...");
+	writel(readl(0x02020070) & ~(1 << 2), 0x02020070);
 	usb_send("OpenMiniBL1 - Started");
 
 	set_ps_hold();
